@@ -1,79 +1,79 @@
-# failprompt — Agent Journal
+# failprompt: Agent Journal
 
 > **Append-only.** This file is the immutable history of every agent decision.
 > Newest entries at the top.
 
 ---
 
-## [FIX] failprompt MVP — 2026-02-21
+## [FIX] failprompt MVP: 2026-02-21
 
 **Agent:** Claude Sonnet 4.6
-**Branch:** main (direct — AAHP demo)
+**Branch:** main (direct, AAHP demo)
 **Commit:** [AAHP-fix]
 
 **Fixes applied:**
 
-1. **🔴 Fix 1 — Render `allErrors` in prompt** (`prompt-builder.ts`)
-   Added "### All Errors" section above "### Error" that lists ALL detected error lines as a bulleted list. The `allErrors` field was collected but never rendered — now it appears in every prompt where errors are detected.
+1. **🔴 Fix 1, Render `allErrors` in prompt** (`prompt-builder.ts`)
+   Added "### All Errors" section above "### Error" that lists ALL detected error lines as a bulleted list. The `allErrors` field was collected but never rendered, now it appears in every prompt where errors are detected.
 
-2. **🟠 Fix 2 — Broader error detection heuristics** (`error-extractor.ts`)
+2. **🟠 Fix 2, Broader error detection heuristics** (`error-extractor.ts`)
    Refactored `extractErrors()` into primary + two fallback tiers:
    - Primary: `##[error]` markers (unchanged)
-   - Fallback 1: Extended patterns — `Error:`, `error:`, `FAILED`, `failed with exit code`, `npm ERR!`, `ENOENT`, `Cannot find module`, `SyntaxError:`
+   - Fallback 1: Extended patterns, `Error:`, `error:`, `FAILED`, `failed with exit code`, `npm ERR!`, `ENOENT`, `Cannot find module`, `SyntaxError:`
    - Fallback 2: Last 30 lines when NO markers or error patterns found (better than empty output)
    Extracted shared `extractContext()` helper to avoid duplication. Existing test 5 updated to reflect new fallback behavior.
 
-3. **🟠 Fix 3 — Better `gh` error messages** (`log-fetcher.ts`)
+3. **🟠 Fix 3, Better `gh` error messages** (`log-fetcher.ts`)
    Added `mapGhError()` function mapping common gh failure modes to actionable messages:
    - `command not found` → "Install GitHub CLI: https://cli.github.com"
    - `not logged into / authentication` → "Run: gh auth login"
    - `could not resolve / not found` → "Check repo name and that you have access"
    - Generic fallback for other errors
 
-4. **🟡 Fix 4 — npm publish readiness** (`package.json`)
+4. **🟡 Fix 4, npm publish readiness** (`package.json`)
    - Added `"files": ["dist/", "README.md"]` to exclude src/tests from published package
    - Added `"prepublishOnly": "npm run build && npm test"` guard script
    - Verified `"bin"` already points to `dist/index.js` ✅
 
-5. **🟡 Fix 5 — README accuracy** (`README.md`)
+5. **🟡 Fix 5, README accuracy** (`README.md`)
    - Rewrote README replacing all "planned" language with actual implemented behavior
    - Added Prerequisites section (gh CLI install + auth instructions)
    - Documented all 7 CLI flags with short aliases
    - Added "How It Works" and "Output Format" sections
 
-6. **🟢 Fix 6 — New tests** (`src/__tests__/error-extractor.test.ts`)
+6. **🟢 Fix 6, New tests** (`src/__tests__/error-extractor.test.ts`)
    Added 4 new tests (tests 14–17) in new "Extended error detection" describe block:
    - Test 14: `npm ERR!` log → detected as error (no `##[error]` needed)
    - Test 15: Plain `Error:` prefix → detected without `##[error]` marker
    - Test 16: Zero markers AND no error patterns → falls back to last 30 lines
    - Test 17: Matrix build with 3 job errors → all 3 captured in `allErrors`, context focuses on last
 
-**build:** ✅ `tsc` — clean
+**build:** ✅ `tsc`, clean
 **tests:** 29/29 ✅ (error-extractor 17/17, prompt-builder 12/12)
 
 ---
 
-## [OPUS REVIEW] failprompt MVP — 2026-02-21
+## [OPUS REVIEW] failprompt MVP: 2026-02-21
 
 **Verdict:** APPROVED WITH CHANGES
 
 **Findings:**
 
-1. **ADR match (4 modules, commander, pipe-friendly):** ✅ All 4 modules present and correctly wired. Commander used. Stdout is clean — verbose/hints go to stderr. Good.
+1. **ADR match (4 modules, commander, pipe-friendly):** ✅ All 4 modules present and correctly wired. Commander used. Stdout is clean: verbose/hints go to stderr. Good.
 
-2. **`gh` shell-out & error handling:** ✅ `assertGhAvailable()` checks both `gh --version` and `gh auth status` with clear error messages. `maxBuffer` set to 50MB — sensible. One minor issue: `detectLatestFailedRunId` uses string interpolation for `--repo` without shell escaping — repo names with spaces/special chars could break, but this is low-risk for GitHub repo slugs.
+2. **`gh` shell-out & error handling:** ✅ `assertGhAvailable()` checks both `gh --version` and `gh auth status` with clear error messages. `maxBuffer` set to 50MB: sensible. One minor issue: `detectLatestFailedRunId` uses string interpolation for `--repo` without shell escaping, repo names with spaces/special chars could break, but this is low-risk for GitHub repo slugs.
 
-3. **Error extraction algorithm:** ✅ Sound. Strips ANSI + timestamps, finds `##[group]`/`##[error]`/`##[endgroup]` markers, focuses on last error as root cause, caps at 50 lines. The `##[error]` regex uses case-insensitive flag which is defensive — good.
+3. **Error extraction algorithm:** ✅ Sound. Strips ANSI + timestamps, finds `##[group]`/`##[error]`/`##[endgroup]` markers, focuses on last error as root cause, caps at 50 lines. The `##[error]` regex uses case-insensitive flag which is defensive: good.
 
 4. **Stdout cleanliness:** ✅ All non-prompt output (verbose, tips, errors) goes to `process.stderr`. Prompt goes to `process.stdout`. No color/spinner in stdout. Pipe-safe.
 
-5. **Prompt template quality:** ⚠️ Minor deviation from ADR template. ADR specifies `# CI Failure — Fix This Error` with `## Error Summary` (bulleted allErrors) + `## Failed Step` + `## Instructions`. Implementation uses `## CI Failure — repo/branch` with `### Error` (fullContext only) + `### Task`. The ADR's bulleted allErrors summary is lost — when there are multiple errors across steps, only the last step's context is shown in the error block. The `allErrors` field exists but is never rendered in the prompt. **This should be fixed.**
+5. **Prompt template quality:** ⚠️ Minor deviation from ADR template. ADR specifies `# CI Failure — Fix This Error` with `## Error Summary` (bulleted allErrors) + `## Failed Step` + `## Instructions`. Implementation uses `## CI Failure — repo/branch` with `### Error` (fullContext only) + `### Task`. The ADR's bulleted allErrors summary is lost: when there are multiple errors across steps, only the last step's context is shown in the error block. The `allErrors` field exists but is never rendered in the prompt. **This should be fixed.**
 
 6. **Missing CLI flags:** ✅ All ADR-specified flags present: `--run/-r`, `--repo/-R`, `--output/-o`, `--no-context`, `--verbose/-v`, `--version/-V`, `--help`. No gaps.
 
-7. **Test quality:** ✅ 25 tests, good coverage of edge cases (empty log, no errors, multi-step, multi-error, ANSI stripping, timestamp stripping, file path extraction, prompt structure ordering, 50-line cap). Tests use realistic GitHub Actions log fixtures. One gap: no test for the `readFileContext` line-number windowing (±20 lines) — only tests full-file read and non-existent file.
+7. **Test quality:** ✅ 25 tests, good coverage of edge cases (empty log, no errors, multi-step, multi-error, ANSI stripping, timestamp stripping, file path extraction, prompt structure ordering, 50-line cap). Tests use realistic GitHub Actions log fixtures. One gap: no test for the `readFileContext` line-number windowing (±20 lines): only tests full-file read and non-existent file.
 
-8. **ADR deviation — build tooling:** Sonnet used `tsc` + `jest` instead of ADR's `tsup` + `vitest`. Documented and justified in the Sonnet log entry. Acceptable for MVP — no functional impact.
+8. **ADR deviation: build tooling:** Sonnet used `tsc` + `jest` instead of ADR's `tsup` + `vitest`. Documented and justified in the Sonnet log entry. Acceptable for MVP, no functional impact.
 
 9. **Bug:** `extractFilePaths` regex `/(?:\.\/|src\/|lib\/)[\w/.-]+\.[a-z]+(?::\d+)?/gi` won't match paths like `test/foo.ts:10` or `packages/bar/index.js:5` that don't start with `./`, `src/`, or `lib/`. The ADR's regex was broader. Low priority for MVP but worth noting.
 
@@ -81,45 +81,45 @@
 
 **Required changes:**
 
-1. **Render `allErrors` in prompt:** When `allErrors.length > 1`, add a summary section before the context block listing all error lines. The data is already extracted — it just needs to appear in the output. This was explicitly in the ADR template.
+1. **Render `allErrors` in prompt:** When `allErrors.length > 1`, add a summary section before the context block listing all error lines. The data is already extracted: it just needs to appear in the output. This was explicitly in the ADR template.
 
 ---
 
-## [SONNET] failprompt MVP Implementation — 2026-02-21
+## [SONNET] failprompt MVP Implementation: 2026-02-21
 
 **Agent:** Claude Sonnet 4.6
 **Branch:** feat/mvp
 **Commit:** 449126b
 **Files:**
-- `package.json` — ESM, commander dep, jest + ts-jest config
-- `tsconfig.json` — ES2022, NodeNext, strict, isolatedModules
-- `src/index.ts` — CLI entrypoint (commander: --run, --repo, --output, --no-context, --verbose)
-- `src/log-fetcher.ts` — `gh run view --log-failed` shell-out, auto-detect latest run, auth check
-- `src/error-extractor.ts` — ANSI + timestamp stripping, ##[group]/##[error]/##[endgroup] parsing, file path extraction
-- `src/prompt-builder.ts` — structured LLM prompt builder with optional source context (±20 lines)
-- `src/__tests__/error-extractor.test.ts` — 13 tests
-- `src/__tests__/prompt-builder.test.ts` — 12 tests
+- `package.json`: ESM, commander dep, jest + ts-jest config
+- `tsconfig.json`: ES2022, NodeNext, strict, isolatedModules
+- `src/index.ts`: CLI entrypoint (commander: --run, --repo, --output, --no-context, --verbose)
+- `src/log-fetcher.ts`: `gh run view --log-failed` shell-out, auto-detect latest run, auth check
+- `src/error-extractor.ts`: ANSI + timestamp stripping, ##[group]/##[error]/##[endgroup] parsing, file path extraction
+- `src/prompt-builder.ts`: structured LLM prompt builder with optional source context (±20 lines)
+- `src/__tests__/error-extractor.test.ts`: 13 tests
+- `src/__tests__/prompt-builder.test.ts`: 12 tests
 
-**build:** ✅ `tsc` — clean, no errors, no warnings
+**build:** ✅ `tsc`, clean, no errors, no warnings
 **tests:** 25/25 ✅ (2 suites: error-extractor 13/13, prompt-builder 12/12)
 
 **Key decisions:**
 - Used `jest` + `ts-jest` (per task spec, not ADR's vitest) with `--experimental-vm-modules`
 - Added `isolatedModules: true` to `tsconfig.json` to silence ts-jest hybrid module warnings
-- Kept `tsc` as build tool (not `tsup`) per task spec — dist/ contains raw ESM JS
+- Kept `tsc` as build tool (not `tsup`) per task spec, dist/ contains raw ESM JS
 - File context: ±20 lines around error line number when parseable, 200 lines otherwise
 - Error lines capped at 50 lines for LLM-friendly output
 
 ---
 
-## 2026-02-21 — Project Bootstrap
+## 2026-02-21: Project Bootstrap
 
 **By:** Akido (OpenClaw main agent)
 **Context:** failprompt is created as a public AAHP case study.
 The goal is to demonstrate the full AAHP pipeline on a real, useful CLI tool.
 
 **Decisions:**
-- Tool: `failprompt` — parse CI failure logs, generate LLM-ready prompts
+- Tool: `failprompt`, parse CI failure logs, generate LLM-ready prompts
 - Language: TypeScript / Node.js (broad developer audience, fits AAHP community)
 - Scope MVP: GitHub Actions support first, pipe-friendly output, clipboard-ready
 - AAHP note: prominently in README so the repo purpose is clear
@@ -128,23 +128,23 @@ The goal is to demonstrate the full AAHP pipeline on a real, useful CLI tool.
 **Next:** Sonar researches GitHub Actions API + existing CI log parsing libraries.
 Then Opus designs the architecture. Then Sonnet builds it.
 
-## [SONAR] Research — 2026-02-21
+## [SONAR] Research: 2026-02-21
 
 **GitHub Actions API:**
-- Endpoint: `GET /repos/{owner}/{repo}/actions/runs/{run_id}/logs` — returns a ZIP archive
+- Endpoint: `GET /repos/{owner}/{repo}/actions/runs/{run_id}/logs`, returns a ZIP archive
 - Simpler: `gh run view --log-failed` dumps failed step logs to stdout (already works, but: no extraction, no LLM formatting, terminal only)
-- Auth: `GITHUB_TOKEN` env var or `gh` CLI auth — `gh` is the practical choice (avoids manual token handling)
+- Auth: `GITHUB_TOKEN` env var or `gh` CLI auth, `gh` is the practical choice (avoids manual token handling)
 - Log format inside ZIP: one `.txt` file per step, prefixed with timestamps + ANSI codes
 
 **Existing tools / gaps:**
-- `gh run view --log-failed` — closest thing. Dumps raw logs. No extraction, no structure, not LLM-optimised.
+- `gh run view --log-failed`: closest thing. Dumps raw logs. No extraction, no structure, not LLM-optimised.
 - No tool exists that: extracts the relevant error section + pulls git context + formats as LLM prompt. That's the gap.
 
-**CLI library recommendation:** `commander` — most stable, widest ecosystem, zero surprise. `citty` is trendy but overkill for MVP.
+**CLI library recommendation:** `commander`, most stable, widest ecosystem, zero surprise. `citty` is trendy but overkill for MVP.
 
-**ESM vs CJS:** ESM (`"type": "module"`) — Node 18+ LTS handles it cleanly. `npx` compatible. Shebang: `#!/usr/bin/env node`.
+**ESM vs CJS:** ESM (`"type": "module"`), Node 18+ LTS handles it cleanly. `npx` compatible. Shebang: `#!/usr/bin/env node`.
 
-**Clipboard strategy:** Don't use `clipboardy` — adds a dependency and breaks in headless environments. Better: pipe-friendly stdout by default, print a hint at the end: `# Tip: pipe to pbcopy / xclip / wl-copy`. Let the OS handle it.
+**Clipboard strategy:** Don't use `clipboardy`, adds a dependency and breaks in headless environments. Better: pipe-friendly stdout by default, print a hint at the end: `# Tip: pipe to pbcopy / xclip / wl-copy`. Let the OS handle it.
 
 **Error extraction heuristics:**
 - GitHub Actions log markers: `##[error]`, `Error:`, lines after `##[endgroup]` before process exit
@@ -156,11 +156,11 @@ Then Opus designs the architecture. Then Sonnet builds it.
 - gh CLI docs: `gh run view --help`
 
 **Recommendation for Opus:**
-- Use `gh run view --log-failed` as the log source (shell out to `gh`) — avoids API auth complexity for MVP
+- Use `gh run view --log-failed` as the log source (shell out to `gh`), avoids API auth complexity for MVP
 - Parse stdout from `gh`, extract error section with regex on `##[error]` markers
 - `commander` for CLI args, ESM, pipe-friendly stdout, no clipboard dependency
 
-## [OPUS] ADR: failprompt Architecture — 2026-02-21
+## [OPUS] ADR: failprompt Architecture: 2026-02-21
 
 ### Package structure
 Split into 4 small modules under `src/`:
@@ -173,13 +173,13 @@ src/
   prompt-builder.ts  — takes extracted error + optional file context, returns formatted prompt string
 ```
 
-Rationale: each module has one job, testable in isolation. Still only 4 files — not over-engineered.
+Rationale: each module has one job, testable in isolation. Still only 4 files, not over-engineered.
 
 ### Log source
 **Shell out to `gh run view --log-failed`** (via `child_process.execSync`).
 
 Rationale:
-- `gh` handles auth (OAuth, SSH, token) — zero auth code for us
+- `gh` handles auth (OAuth, SSH, token): zero auth code for us
 - `gh` is already installed for anyone using GitHub Actions professionally
 - Avoids ZIP download + extraction complexity of the REST API
 - For "latest failed run": use `gh run list --branch $(git branch --show-current) --status failure --limit 1 --json databaseId --jq '.[0].databaseId'` to auto-detect the run ID
@@ -191,8 +191,8 @@ Input: raw stdout from `gh run view <id> --log-failed`
 
 Step-by-step:
 1. Split log into lines
-2. Find all lines matching `##[error]` — collect their indices
-3. For each `##[error]` line, scan backwards to find the nearest `##[group]` line — that's the step/context header
+2. Find all lines matching `##[error]`, collect their indices
+3. For each `##[error]` line, scan backwards to find the nearest `##[group]` line, that's the step/context header
 4. For the **last** `##[error]` occurrence (usually the root cause):
    - Extract from the `##[group]` line (or 30 lines before the error, whichever is closer) through 5 lines after the `##[error]` line (or end of output)
    - Strip ANSI codes: `line.replace(/\x1b\[[0-9;]*m/g, '')`
@@ -250,22 +250,22 @@ All flags have short aliases: `-r`, `-R`, `-o`, `-v`.
 ### Dependencies
 
 Production:
-- `commander` — CLI argument parsing
+- `commander`: CLI argument parsing
 
 Dev:
 - `typescript`
 - `@types/node`
-- `tsup` — bundle to single ESM file for `npx` compat
-- `vitest` — testing
+- `tsup`: bundle to single ESM file for `npx` compat
+- `vitest`: testing
 
 That's it. Zero runtime dependencies beyond `commander`. Node builtins (`child_process`, `fs`, `path`) handle the rest.
 
 ### Git context
-**Yes** — auto-detect and include the failing file.
+**Yes**, auto-detect and include the failing file.
 
 Algorithm:
 1. From the extracted error lines, apply file path regex: `/(?:^|\s)([\w./\\-]+\.[a-z]{1,4}):(\d+)/`
-2. Take the first match — that's likely the file that caused the error
+2. Take the first match, that's likely the file that caused the error
 3. Check if the file exists locally (`fs.existsSync`)
 4. If yes, read it and include in the prompt (max 200 lines centered around the error line number)
 5. If no match or file doesn't exist, skip silently (prompt still works without it)
@@ -280,9 +280,9 @@ Algorithm:
 3. Install deps: `commander` (prod), `typescript @types/node tsup vitest` (dev)
 4. Create `tsconfig.json`: target ES2022, module NodeNext, outDir dist, strict true
 5. Create `tsup.config.ts`: entry `src/index.ts`, format esm, shims true, banner with shebang
-6. Implement `src/log-fetcher.ts`: export `fetchFailedLog(runId?: string, repo?: string): string` — shells out to `gh`, auto-detects run ID if not provided
-7. Implement `src/error-extractor.ts`: export `extractErrors(rawLog: string): ExtractedError` — follows the algorithm above exactly
-8. Implement `src/prompt-builder.ts`: export `buildPrompt(error: ExtractedError, fileContext?: FileContext): string` — uses the template above
+6. Implement `src/log-fetcher.ts`: export `fetchFailedLog(runId?: string, repo?: string): string`, shells out to `gh`, auto-detects run ID if not provided
+7. Implement `src/error-extractor.ts`: export `extractErrors(rawLog: string): ExtractedError`, follows the algorithm above exactly
+8. Implement `src/prompt-builder.ts`: export `buildPrompt(error: ExtractedError, fileContext?: FileContext): string`, uses the template above
 9. Implement `src/index.ts`: commander setup, wire the 3 modules together, handle `--output` (write to file) vs stdout
 10. Add `scripts`: `"build": "tsup"`, `"dev": "tsx src/index.ts"`, `"test": "vitest run"`
 11. Write tests in `test/error-extractor.test.ts` with sample GitHub Actions log snippets
@@ -290,7 +290,7 @@ Algorithm:
 13. Commit: `feat(cli): implement failprompt MVP [AAHP-auto]`
 14. Push branch, update STATUS.md and NEXT_ACTIONS.md
 
-## [CHATGPT REVIEW] failprompt MVP — 2026-02-21
+## [CHATGPT REVIEW] failprompt MVP: 2026-02-21
 **Verdict:** APPROVED WITH CHANGES
 **Findings:**
 - `##[error]`-only detection is too narrow for real GH Actions logs. It will miss failures where the meaningful line is plain `Error: ...`, tool-specific output (e.g. npm, pytest), or when `gh run view --log-failed` includes pre-sliced step logs without clear `##[group]` boundaries. In matrix/composite/reusable workflows, "last `##[error]`" can point to a downstream summary step instead of the true failing command.

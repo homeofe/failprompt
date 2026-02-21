@@ -1,6 +1,6 @@
 # failprompt
 
-> **Parse CI failure logs and generate ready-to-paste AI prompts — in one command.**
+> **Parse CI failure logs and generate ready-to-paste AI prompts, in one command.**
 
 ```bash
 npx failprompt
@@ -27,7 +27,7 @@ Every developer using AI has done this manually:
 ## Prerequisites
 
 - **Node.js** 18+ (LTS recommended)
-- **[GitHub CLI (`gh`)](https://cli.github.com)** — installed and authenticated
+- **[GitHub CLI (`gh`)](https://cli.github.com)**: installed and authenticated
 
 ```bash
 # Install gh (macOS)
@@ -145,12 +145,12 @@ Fix the error above. Explain what caused it and provide the corrected code.
 > with no manual code writing. Every decision is documented in `.ai/handoff/LOG.md`.
 >
 > The goal is to show how AAHP enables autonomous, auditable, multi-agent software development
-> — not just as a concept, but as a working repository you can clone and inspect.
+>, not just as a concept, but as a working repository you can clone and inspect.
 >
 > Read the handoff files to see exactly what each agent decided and why:
-> - [`.ai/handoff/STATUS.md`](.ai/handoff/STATUS.md) — current build state
-> - [`.ai/handoff/LOG.md`](.ai/handoff/LOG.md) — full agent journal
-> - [`.ai/handoff/NEXT_ACTIONS.md`](.ai/handoff/NEXT_ACTIONS.md) — task queue
+> - [`.ai/handoff/STATUS.md`](.ai/handoff/STATUS.md), current build state
+> - [`.ai/handoff/LOG.md`](.ai/handoff/LOG.md), full agent journal
+> - [`.ai/handoff/NEXT_ACTIONS.md`](.ai/handoff/NEXT_ACTIONS.md), task queue
 
 ---
 

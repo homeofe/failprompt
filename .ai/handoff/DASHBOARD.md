@@ -1,7 +1,7 @@
-# failprompt — Build Dashboard
+# failprompt: Build Dashboard
 
 > Updated by agents after every completed task.
-> Last updated: 2026-02-21 — Phase 5 FIX complete
+> Last updated: 2026-02-21, Phase 5 FIX complete
 
 ---
 
@@ -19,8 +19,8 @@
 
 | Module                   | Status | Tests  | Notes                              |
 | ------------------------ | ------ | ------ | ---------------------------------- |
-| `src/index.ts`           | ✅     | —      | CLI entrypoint, commander wired    |
-| `src/log-fetcher.ts`     | ✅     | —      | gh shell-out + friendly error maps |
+| `src/index.ts`           | ✅     | - | CLI entrypoint, commander wired    |
+| `src/log-fetcher.ts`     | ✅     | - | gh shell-out + friendly error maps |
 | `src/error-extractor.ts` | ✅     | 17/17  | ##[error] + extended heuristics + last-30 fallback |
 | `src/prompt-builder.ts`  | ✅     | 12/12  | allErrors rendered, source context |
 
@@ -40,9 +40,9 @@
 
 | Field          | Value                               |
 | -------------- | ----------------------------------- |
-| Current task   | Complete — all fixes applied        |
-| Phase          | 5 — FIX done                        |
-| Last completed | Claude Sonnet 4.6 — Phase 5 FIX     |
+| Current task   | Complete, all fixes applied        |
+| Phase          | 5, FIX done                        |
+| Last completed | Claude Sonnet 4.6, Phase 5 FIX     |
 
 ---
 
@@ -53,7 +53,7 @@
 | 1 | GitLab CI support       | 🟠 MEDIUM | MVP shipped | ⏳ After MVP    |
 | 2 | Jenkins support         | 🟡 LOW    | GitLab done | ⏳ Deferred     |
 | 3 | npm publish             | 🟠 MEDIUM | ✅ Ready    | 🟢 Can ship now |
-| 4 | GitHub Actions workflow | 🟡 LOW    | —           | ⏳ Optional     |
+| 4 | GitHub Actions workflow | 🟡 LOW    | - | ⏳ Optional     |
 
 ---
 

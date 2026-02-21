@@ -1,4 +1,4 @@
-# failprompt — Autonomous Multi-Agent Workflow
+# failprompt: Autonomous Multi-Agent Workflow
 
 > Based on the [AAHP Protocol](https://github.com/homeofe/AAHP).
 > This file documents how agents collaborate on this project autonomously.
@@ -18,19 +18,19 @@
 
 ## Pipeline Phases
 
-### 1 — Research (Sonar)
+### 1: Research (Sonar)
 Reads `NEXT_ACTIONS.md`. Searches for: existing tools in the space, relevant npm packages, API documentation. Writes findings to `LOG.md`.
 
-### 2 — Architecture (Opus)
+### 2: Architecture (Opus)
 Reads Sonar findings. Decides: module structure, algorithm design, CLI interface, dependencies. Writes ADR to `LOG.md` with numbered instructions for Sonnet.
 
-### 3 — Implementation (Sonnet)
+### 3: Implementation (Sonnet)
 Reads ADR. Creates feature branch. Writes code + tests. Runs `npm run build` and `npm test`. Commits and pushes. Updates `STATUS.md` and `DASHBOARD.md`.
 
-### 4 — Discussion Round (Opus + ChatGPT)
+### 4: Discussion Round (Opus + ChatGPT)
 Both review the branch. Opus checks architectural adherence. ChatGPT checks edge cases and UX. Findings in `LOG.md`.
 
-### 5 — Fix (Sonnet)
+### 5: Fix (Sonnet)
 Applies review findings. Re-runs tests. Pushes. Updates `DASHBOARD.md` and `TRUST.md`.
 
 ---
@@ -48,9 +48,9 @@ Applies review findings. Re-runs tests. Pushes. Updates `DASHBOARD.md` and `TRUS
 
 ## Notification Rule
 
-**Notify project owner only when a full task is done** — not on phase transitions.
+**Notify project owner only when a full task is done**, not on phase transitions.
 Format: `✅ failprompt [feature] done — Branch: feat/... — Tests: X/X`
 
 ---
 
-*This project is an AAHP case study — the workflow IS the product documentation.*
+*This project is an AAHP case study, the workflow IS the product documentation.*

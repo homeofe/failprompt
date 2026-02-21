@@ -1,4 +1,4 @@
-# failprompt — Next Actions for Incoming Agent
+# failprompt: Next Actions for Incoming Agent
 
 > Priority order. Work top-down. Each item is self-contained.
 
@@ -26,7 +26,7 @@
 
 ## 2. Implementation (Sonnet)
 
-**Goal:** Build the MVP — GitHub Actions log fetch + error extraction + prompt output.
+**Goal:** Build the MVP, GitHub Actions log fetch + error extraction + prompt output.
 
 **Must implement:**
 - `failprompt` CLI entrypoint with `--run`, `--repo`, `--output` flags

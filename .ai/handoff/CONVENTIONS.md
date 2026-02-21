@@ -1,4 +1,4 @@
-# failprompt — Agent Conventions
+# failprompt: Agent Conventions
 
 > Every agent working on this project must read and follow these conventions.
 
@@ -11,15 +11,15 @@
 ## Code Style
 
 - **TypeScript** strict mode (`strict: true`, `noUncheckedIndexedAccess`)
-- **ESM** — `"type": "module"` in package.json; `.js` extensions in imports
+- **ESM**: `"type": "module"` in package.json; `.js` extensions in imports
 - **No semicolons**, single quotes, trailing commas (Prettier defaults)
 - Validate untrusted input (CLI args, shell output) before processing
 
 ## CLI-Specific Rules
 
-- **stdout** = final output only (pipe-friendly — no spinners, no colors on stdout)
+- **stdout** = final output only (pipe-friendly: no spinners, no colors on stdout)
 - **stderr** = progress info, hints, errors (e.g. clipboard tip)
-- Never call `process.exit()` in library code — only in `index.ts`
+- Never call `process.exit()` in library code, only in `index.ts`
 - Errors must have human-readable messages + actionable hints
 
 ## Branching & Commits
@@ -38,7 +38,7 @@ Commit format:
 ## Testing
 
 - Unit tests for all core logic (`error-extractor`, `prompt-builder`)
-- Use fixture strings — do NOT shell out in tests
+- Use fixture strings, do NOT shell out in tests
 - `npm test` must pass before every commit
 - `npm run build` (tsc) must pass before every commit
 
