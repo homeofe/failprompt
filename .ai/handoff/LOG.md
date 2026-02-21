@@ -5,6 +5,33 @@
 
 ---
 
+## [SONNET] failprompt MVP Implementation — 2026-02-21
+
+**Agent:** Claude Sonnet 4.6
+**Branch:** feat/mvp
+**Commit:** 449126b
+**Files:**
+- `package.json` — ESM, commander dep, jest + ts-jest config
+- `tsconfig.json` — ES2022, NodeNext, strict, isolatedModules
+- `src/index.ts` — CLI entrypoint (commander: --run, --repo, --output, --no-context, --verbose)
+- `src/log-fetcher.ts` — `gh run view --log-failed` shell-out, auto-detect latest run, auth check
+- `src/error-extractor.ts` — ANSI + timestamp stripping, ##[group]/##[error]/##[endgroup] parsing, file path extraction
+- `src/prompt-builder.ts` — structured LLM prompt builder with optional source context (±20 lines)
+- `src/__tests__/error-extractor.test.ts` — 13 tests
+- `src/__tests__/prompt-builder.test.ts` — 12 tests
+
+**build:** ✅ `tsc` — clean, no errors, no warnings
+**tests:** 25/25 ✅ (2 suites: error-extractor 13/13, prompt-builder 12/12)
+
+**Key decisions:**
+- Used `jest` + `ts-jest` (per task spec, not ADR's vitest) with `--experimental-vm-modules`
+- Added `isolatedModules: true` to `tsconfig.json` to silence ts-jest hybrid module warnings
+- Kept `tsc` as build tool (not `tsup`) per task spec — dist/ contains raw ESM JS
+- File context: ±20 lines around error line number when parseable, 200 lines otherwise
+- Error lines capped at 50 lines for LLM-friendly output
+
+---
+
 ## 2026-02-21 — Project Bootstrap
 
 **By:** Akido (OpenClaw main agent)
