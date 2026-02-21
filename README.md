@@ -3,8 +3,8 @@
 > **Parse CI failure logs and generate ready-to-paste AI prompts — in one command.**
 
 ```bash
-npx failprompt --run 1234
-# → copies a structured prompt to clipboard, ready for Claude / ChatGPT / Copilot
+npx failprompt
+# → prints a structured LLM-ready prompt to stdout, ready for Claude / ChatGPT / Copilot
 ```
 
 ---
@@ -13,7 +13,7 @@ npx failprompt --run 1234
 
 Every developer using AI has done this manually:
 
-1. CI fails on GitHub Actions / Jenkins / GitLab
+1. CI fails on GitHub Actions
 2. Open the run, scroll through 200 lines of logs
 3. Copy the relevant error
 4. Paste into Claude: *"what's wrong with this?"*
@@ -24,26 +24,56 @@ Every developer using AI has done this manually:
 
 ---
 
-## Features (planned)
+## Prerequisites
 
-- **GitHub Actions** support (`gh` CLI integration)
-- **GitLab CI** support
-- **Jenkins** support
-- Extracts the relevant error section — not 200 lines of noise
-- Pulls the failing file from git context automatically
-- Outputs a structured prompt optimised for LLMs
-- Pipe-friendly: `failprompt | pbcopy`, `failprompt | wl-copy`, `failprompt | xclip`
+- **Node.js** 18+ (LTS recommended)
+- **[GitHub CLI (`gh`)](https://cli.github.com)** — installed and authenticated
+
+```bash
+# Install gh (macOS)
+brew install gh
+
+# Install gh (Linux)
+sudo apt install gh   # or follow https://cli.github.com/manual/installation
+
+# Authenticate
+gh auth login
+```
 
 ---
 
-## Usage (planned)
+## Installation
 
 ```bash
-# Latest failed run on current branch
+# Global install
+npm install -g failprompt
+
+# Or run directly without installing
+npx failprompt
+```
+
+---
+
+## Usage
+
+```bash
+# Auto-detect latest failed run on current branch
 failprompt
 
 # Specific run ID
-failprompt --run 1234
+failprompt --run 1234567890
+
+# Different repo
+failprompt --repo owner/repo
+
+# Write prompt to file instead of stdout
+failprompt --output prompt.md
+
+# Skip source file context extraction
+failprompt --no-context
+
+# Verbose debug output (sent to stderr)
+failprompt --verbose
 
 # Pipe to clipboard (macOS)
 failprompt | pbcopy
@@ -51,21 +81,59 @@ failprompt | pbcopy
 # Pipe to clipboard (Linux)
 failprompt | xclip -selection clipboard
 
-# Output to file
-failprompt --output prompt.md
+# Pipe to clipboard (Windows)
+failprompt | clip
 ```
+
+### Flags
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--run <id>` | `-r` | Specific GitHub Actions run ID |
+| `--repo <owner/repo>` | `-R` | Repository (default: git remote origin) |
+| `--output <file>` | `-o` | Write prompt to file |
+| `--no-context` | | Skip git source context extraction |
+| `--verbose` | `-v` | Print debug info to stderr |
+| `--version` | `-V` | Output version number |
+| `--help` | | Show help |
 
 ---
 
-## Installation (planned)
+## How It Works
 
-```bash
-npm install -g failprompt
-# or
-npx failprompt
-```
+1. Shells out to `gh run view --log-failed` to fetch the failed step log
+2. Strips ANSI codes and timestamps from raw output
+3. Detects error lines via `##[error]` markers, with fallbacks for `Error:`, `npm ERR!`, `FAILED`, `ENOENT`, `SyntaxError:`, and more
+4. Finds the failing step name from `##[group]` markers
+5. Extracts the relevant ±30-line error context block
+6. If a file path is referenced in the error, reads ±20 lines from that file
+7. Outputs a structured Markdown prompt optimised for LLMs
 
 ---
+
+## Output Format
+
+```markdown
+## CI Failure — owner/repo / branch
+**Run:** <run-id>
+**Failing step:** <step-name>
+
+### All Errors
+- ##[error]Process completed with exit code 1.
+
+### Error
+```
+<error context block>
+```
+
+### Source Context
+```ts
+<relevant file snippet>
+```
+
+### Task
+Fix the error above. Explain what caused it and provide the corrected code.
+```
 
 ---
 

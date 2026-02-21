@@ -5,6 +5,86 @@
 
 ---
 
+## [FIX] failprompt MVP — 2026-02-21
+
+**Agent:** Claude Sonnet 4.6
+**Branch:** main (direct — AAHP demo)
+**Commit:** [AAHP-fix]
+
+**Fixes applied:**
+
+1. **🔴 Fix 1 — Render `allErrors` in prompt** (`prompt-builder.ts`)
+   Added "### All Errors" section above "### Error" that lists ALL detected error lines as a bulleted list. The `allErrors` field was collected but never rendered — now it appears in every prompt where errors are detected.
+
+2. **🟠 Fix 2 — Broader error detection heuristics** (`error-extractor.ts`)
+   Refactored `extractErrors()` into primary + two fallback tiers:
+   - Primary: `##[error]` markers (unchanged)
+   - Fallback 1: Extended patterns — `Error:`, `error:`, `FAILED`, `failed with exit code`, `npm ERR!`, `ENOENT`, `Cannot find module`, `SyntaxError:`
+   - Fallback 2: Last 30 lines when NO markers or error patterns found (better than empty output)
+   Extracted shared `extractContext()` helper to avoid duplication. Existing test 5 updated to reflect new fallback behavior.
+
+3. **🟠 Fix 3 — Better `gh` error messages** (`log-fetcher.ts`)
+   Added `mapGhError()` function mapping common gh failure modes to actionable messages:
+   - `command not found` → "Install GitHub CLI: https://cli.github.com"
+   - `not logged into / authentication` → "Run: gh auth login"
+   - `could not resolve / not found` → "Check repo name and that you have access"
+   - Generic fallback for other errors
+
+4. **🟡 Fix 4 — npm publish readiness** (`package.json`)
+   - Added `"files": ["dist/", "README.md"]` to exclude src/tests from published package
+   - Added `"prepublishOnly": "npm run build && npm test"` guard script
+   - Verified `"bin"` already points to `dist/index.js` ✅
+
+5. **🟡 Fix 5 — README accuracy** (`README.md`)
+   - Rewrote README replacing all "planned" language with actual implemented behavior
+   - Added Prerequisites section (gh CLI install + auth instructions)
+   - Documented all 7 CLI flags with short aliases
+   - Added "How It Works" and "Output Format" sections
+
+6. **🟢 Fix 6 — New tests** (`src/__tests__/error-extractor.test.ts`)
+   Added 4 new tests (tests 14–17) in new "Extended error detection" describe block:
+   - Test 14: `npm ERR!` log → detected as error (no `##[error]` needed)
+   - Test 15: Plain `Error:` prefix → detected without `##[error]` marker
+   - Test 16: Zero markers AND no error patterns → falls back to last 30 lines
+   - Test 17: Matrix build with 3 job errors → all 3 captured in `allErrors`, context focuses on last
+
+**build:** ✅ `tsc` — clean
+**tests:** 29/29 ✅ (error-extractor 17/17, prompt-builder 12/12)
+
+---
+
+## [OPUS REVIEW] failprompt MVP — 2026-02-21
+
+**Verdict:** APPROVED WITH CHANGES
+
+**Findings:**
+
+1. **ADR match (4 modules, commander, pipe-friendly):** ✅ All 4 modules present and correctly wired. Commander used. Stdout is clean — verbose/hints go to stderr. Good.
+
+2. **`gh` shell-out & error handling:** ✅ `assertGhAvailable()` checks both `gh --version` and `gh auth status` with clear error messages. `maxBuffer` set to 50MB — sensible. One minor issue: `detectLatestFailedRunId` uses string interpolation for `--repo` without shell escaping — repo names with spaces/special chars could break, but this is low-risk for GitHub repo slugs.
+
+3. **Error extraction algorithm:** ✅ Sound. Strips ANSI + timestamps, finds `##[group]`/`##[error]`/`##[endgroup]` markers, focuses on last error as root cause, caps at 50 lines. The `##[error]` regex uses case-insensitive flag which is defensive — good.
+
+4. **Stdout cleanliness:** ✅ All non-prompt output (verbose, tips, errors) goes to `process.stderr`. Prompt goes to `process.stdout`. No color/spinner in stdout. Pipe-safe.
+
+5. **Prompt template quality:** ⚠️ Minor deviation from ADR template. ADR specifies `# CI Failure — Fix This Error` with `## Error Summary` (bulleted allErrors) + `## Failed Step` + `## Instructions`. Implementation uses `## CI Failure — repo/branch` with `### Error` (fullContext only) + `### Task`. The ADR's bulleted allErrors summary is lost — when there are multiple errors across steps, only the last step's context is shown in the error block. The `allErrors` field exists but is never rendered in the prompt. **This should be fixed.**
+
+6. **Missing CLI flags:** ✅ All ADR-specified flags present: `--run/-r`, `--repo/-R`, `--output/-o`, `--no-context`, `--verbose/-v`, `--version/-V`, `--help`. No gaps.
+
+7. **Test quality:** ✅ 25 tests, good coverage of edge cases (empty log, no errors, multi-step, multi-error, ANSI stripping, timestamp stripping, file path extraction, prompt structure ordering, 50-line cap). Tests use realistic GitHub Actions log fixtures. One gap: no test for the `readFileContext` line-number windowing (±20 lines) — only tests full-file read and non-existent file.
+
+8. **ADR deviation — build tooling:** Sonnet used `tsc` + `jest` instead of ADR's `tsup` + `vitest`. Documented and justified in the Sonnet log entry. Acceptable for MVP — no functional impact.
+
+9. **Bug:** `extractFilePaths` regex `/(?:\.\/|src\/|lib\/)[\w/.-]+\.[a-z]+(?::\d+)?/gi` won't match paths like `test/foo.ts:10` or `packages/bar/index.js:5` that don't start with `./`, `src/`, or `lib/`. The ADR's regex was broader. Low priority for MVP but worth noting.
+
+10. **`readFileContext` only reads the first file path.** If multiple files are referenced, only one gets source context. Acceptable for MVP.
+
+**Required changes:**
+
+1. **Render `allErrors` in prompt:** When `allErrors.length > 1`, add a summary section before the context block listing all error lines. The data is already extracted — it just needs to appear in the output. This was explicitly in the ADR template.
+
+---
+
 ## [SONNET] failprompt MVP Implementation — 2026-02-21
 
 **Agent:** Claude Sonnet 4.6
@@ -209,3 +289,23 @@ Algorithm:
 12. Build, verify `npx .` works locally
 13. Commit: `feat(cli): implement failprompt MVP [AAHP-auto]`
 14. Push branch, update STATUS.md and NEXT_ACTIONS.md
+
+## [CHATGPT REVIEW] failprompt MVP — 2026-02-21
+**Verdict:** APPROVED WITH CHANGES
+**Findings:**
+- `##[error]`-only detection is too narrow for real GH Actions logs. It will miss failures where the meaningful line is plain `Error: ...`, tool-specific output (e.g. npm, pytest), or when `gh run view --log-failed` includes pre-sliced step logs without clear `##[group]` boundaries. In matrix/composite/reusable workflows, "last `##[error]`" can point to a downstream summary step instead of the true failing command.
+- File path extraction is currently limited to `./`, `src/`, `lib/` + lowercase extension. It misses common paths (`packages/*`, `apps/*`, `test/*`, absolute/Windows paths, uppercase extensions, stacktrace style `file.ts(42,10)`). This reduces context quality.
+- Prompt UX is decent and compact, but could be more LLM-effective by adding a short "Error Summary" list (`allErrors`) and explicit output format expectations (root cause, minimal fix, patch). Right now it only shows full context and a generic task sentence.
+- `--no-context`: acceptable fallback, but prompt quality drops significantly for compile/runtime errors without source snippet. Current default-on behavior is correct; docs/help should clearly recommend not disabling unless repo is unavailable.
+- Error handling around `gh` is partly good but not user-friendly enough in edge cases: messages from `execSync` are noisy and do not include actionable checks (`gh auth status`, repo access, run ID validity). `detectLatestFailedRunId` fallback to `main` can be misleading on repos whose default branch is different.
+- npm/npx readiness gaps: README still says "planned" while code is implemented; README claims clipboard copy behavior not implemented (tool only prints tip). Also no `files` whitelist in `package.json` (risk of publishing tests/.ai clutter), and no `prepublishOnly` build guard.
+- Tests are solid for happy-path parsing, but they miss key real-world log variants (nested groups, missing endgroup, no `##[error]`, multiple candidate file paths, reusable workflow prefixes, windows paths, non-TS extensions, run list returning empty/null/permission errors).
+**Required changes:**
+- Expand extraction heuristics beyond `##[error]`: include fallback patterns (`Error:`, `failed`, `exit code`, language/tool signatures) and prefer nearest failing command block over "last error line" globally.
+- Harden step attribution for matrix/composite/reusable workflows (track group stack or segment by step headers; add deterministic tie-breaker when multiple failures exist).
+- Broaden `extractFilePaths` regex to support monorepo directories, Windows paths, uppercase extensions, and stacktrace formats; add tests for each.
+- Improve prompt template with concise summary bullets (`allErrors`) and stricter task instructions (ask for root cause + concrete patch/diff).
+- Improve `gh` error UX: map common failure modes to friendly guidance (missing gh, unauthenticated, repo not accessible, run not found, no failed run on branch); avoid brittle `main` fallback.
+- Prepare publish packaging: update README from "planned" to actual behavior, add `files` field, add `prepublishOnly` (build+test), and verify `dist/index.js` shebang/execute bit in published tarball.
+- Add missing tests for extraction and log-fetcher failure scenarios (including mocked `execSync` stderr parsing).
+

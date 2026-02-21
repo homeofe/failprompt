@@ -89,7 +89,16 @@ export function buildPrompt(options: PromptOptions): string {
   parts.push(`**Failing step:** ${error.stepName}`);
   parts.push('');
 
-  // Error section
+  // All Errors summary (bulleted list of every detected error line)
+  if (error.allErrors.length > 0) {
+    parts.push('### All Errors');
+    for (const errLine of error.allErrors) {
+      parts.push(`- ${errLine}`);
+    }
+    parts.push('');
+  }
+
+  // Error context section
   parts.push('### Error');
   parts.push('```');
   parts.push(error.fullContext || '(no error output captured)');
