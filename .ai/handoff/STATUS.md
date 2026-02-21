@@ -1,44 +1,52 @@
-# failprompt: Current State of the Nation
+# failprompt: Current State
 
-> Last updated: 2026-02-21, MVP Implementation by SONNET
-> Status: **MVP complete. Build clean. 25/25 tests green. Branch: feat/mvp**
+> Last updated: 2026-02-21
+> Status: **Complete. 42/42 tests. GitHub Actions CI live. Ready for npm publish.**
 
 ## Build Health
 
-| Check        | Result      | Notes                              |
-| ------------ | ----------- | ---------------------------------- |
-| `build`      | ✅ Clean    | `tsc`, no errors, no warnings     |
-| `test`       | ✅ 25/25    | `jest`, 2 suites, 25 tests green  |
-| `lint`       | ⏳ Not run  | No linter configured yet           |
-| `type-check` | ✅ Clean    | Strict mode, NodeNext module       |
+| Check        | Result    | Notes                                        |
+| ------------ | --------- | -------------------------------------------- |
+| `tsc`        | ✅ Clean  | Strict mode, NodeNext, zero errors           |
+| `npm test`   | ✅ 42/42  | 3 suites: extractor, prompt-builder, integration |
+| GitHub CI    | ✅ Live   | `.github/workflows/ci.yml` on main           |
+| npm publish  | ⏳ Pending | Needs `npm login` (human action)             |
 
 ## What Exists
 
-- `README.md`: project description + AAHP case study note
-- `.ai/handoff/`: AAHP protocol files (STATUS, LOG, NEXT_ACTIONS)
-- `package.json`: ESM, commander dep, jest config (Verified)
-- `tsconfig.json`: ES2022, NodeNext, strict, isolatedModules (Verified)
-- `src/index.ts`: CLI entrypoint (commander, --run/--repo/--output/--no-context/--verbose) (Verified)
-- `src/log-fetcher.ts`: shells out to `gh run view --log-failed` (Assumed, no real gh in CI)
-- `src/error-extractor.ts`: parses ##[group]/##[error]/##[endgroup], strips ANSI + timestamps (Verified)
-- `src/prompt-builder.ts`: builds structured LLM prompt with optional file context (Verified)
-- `src/__tests__/error-extractor.test.ts`: 13 tests (Verified ✅)
-- `src/__tests__/prompt-builder.test.ts`: 12 tests (Verified ✅)
-- `dist/`: compiled JS output (Verified)
+| File | Status | Notes |
+| ---- | ------ | ----- |
+| `src/index.ts` | Verified | CLI entrypoint, commander, --run/--repo/--output/--verbose |
+| `src/log-fetcher.ts` | Verified | gh shell-out, auth check, friendly error messages |
+| `src/error-extractor.ts` | Verified | gh log format parsing (job/step/timestamp), ##[error] markers, extended heuristics, last-30 fallback |
+| `src/prompt-builder.ts` | Verified | structured LLM prompt, source file context |
+| `src/__tests__/error-extractor.test.ts` | Verified | 17 tests |
+| `src/__tests__/prompt-builder.test.ts` | Verified | 12 tests |
+| `src/__tests__/integration.test.ts` | Verified | 13 tests - 3 realistic scenarios (TS error, npm ERR!, Jest failure) |
+| `.github/workflows/ci.yml` | Verified | Runs on every push, node 20 |
+| `dist/` | Verified | Compiled, shebang present, bin field wired |
+| `README.md` | Verified | Usage examples, AAHP case study note |
+
+## Tested End-to-End
+
+The tool was tested against a real GitHub Actions failure in its own repo (run `22257459273`):
+- Auto-detected repo: `homeofe/failprompt`
+- Auto-detected branch: `main`
+- Auto-detected latest failed run - no flags needed
+- Correctly identified failing step: `Run tests`
+- Extracted exact assertion error with line number
+- Included relevant source file context automatically
 
 ## What is Missing
 
-| Gap              | Severity | Description                                          |
-| ---------------- | -------- | ---------------------------------------------------- |
-| GitLab CI        | LOW      | Deferred, Phase 2 feature                           |
-| Jenkins support  | LOW      | Deferred, Phase 3 feature                           |
-| Lint config      | LOW      | No ESLint / Prettier configured yet                  |
-| npm publish      | MEDIUM   | Not published to npmjs.com yet                       |
-| GitHub Actions CI| MEDIUM   | No `.github/workflows/` CI pipeline yet              |
-| npx test         | UNKNOWN  | Not verified that `npx .` works with the shebang     |
+| Gap             | Severity | Notes                          |
+| --------------- | -------- | ------------------------------ |
+| npm publish     | MEDIUM   | Needs `npm login` from Emre    |
+| GitLab CI       | LOW      | Phase 2, after npm publish     |
+| ESLint          | LOW      | Optional, nice to have         |
 
 ## Trust Levels
 
-- **(Verified)**: confirmed by running code/tests
-- **(Assumed)**: derived from docs/config, not directly tested
+- **(Verified)**: confirmed by running code/tests/real CI
+- **(Assumed)**: derived from config, not directly tested
 - **(Unknown)**: needs verification

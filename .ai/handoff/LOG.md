@@ -422,3 +422,40 @@ Winner: **commander**
 - `failprompt --verbose` - debug to stderr
 
 **No code changes required.** Project was fully implemented in the previous pipeline run (Phase 5 FIX, 2026-02-21). This re-run validated all phases and confirmed readiness for npm publish.
+
+## [AKIDO] Real E2E Test + Integration Scenarios: 2026-02-21
+
+**Agent:** Akido (main session)
+**Phase:** Post-implementation validation
+
+### What was done
+
+**Bug found and fixed:**
+- `extractErrors()` was outputting raw gh log lines with `<job>\t<step>\t<timestamp>` prefix
+- Step name was always "(unknown)" because parser looked for `##[group]` markers, not gh tab format
+- Fix: added `parseGhLogLine()` function that splits on tabs, extracts step from field[1], strips timestamp from field[2]
+- All 29 existing tests still pass after fix
+
+**GitHub Actions CI added:**
+- `.github/workflows/ci.yml`: node 20, npm ci, tsc --noEmit, npm test
+- Runs on every push to any branch
+
+**Real end-to-end test:**
+- Pushed intentional failing test to trigger CI (run 22257459273)
+- Ran `failprompt` without flags from repo directory
+- Auto-detected repo, branch, run ID
+- Output: correct step name, clean error, source context injected
+- Demo captured and shown to Emre
+
+**3 integration test scenarios added:**
+1. TypeScript compile error (TS2345 type mismatch) - step: "Run build"
+2. npm ERR! Cannot find module - step: "Run server"
+3. Jest assertion failure (Expected 401, Received 200) - step: "Run tests"
+
+**Final test count:** 42/42 (17 extractor + 12 prompt-builder + 13 integration)
+**Commit:** pushed to main
+
+### Next action
+npm publish - requires `npm login` from Emre (browser 2FA)
+
+---

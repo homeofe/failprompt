@@ -1,83 +1,52 @@
-# failprompt: Next Actions for Incoming Agent
+# failprompt: Next Actions
 
-> Priority order. Work top-down. Each item is self-contained.
-> Last updated: 2026-02-21 after AAHP re-run validation.
-
----
-
-## Status: MVP COMPLETE
-
-The failprompt MVP is fully implemented, tested (29/29), and pushed to main.
-Build is clean. npm publish is ready.
+> Last updated: 2026-02-21
+> Priority order. Work top-down.
 
 ---
 
-## 1. npm Publish (Human Action Required)
+## 1. npm publish (requires human action)
 
-**Goal:** Make `npx failprompt` work for everyone.
+**Goal:** Make `failprompt` available via `npx failprompt` globally.
 
-**Steps:**
-```bash
-cd /home/chef-linux/.openclaw/workspace/failprompt
-npm login    # authenticate with npm registry
-npm publish  # triggers prepublishOnly (build + test) then publishes
-```
+**What needs to happen:**
+1. Emre runs `npm login` in a terminal (browser 2FA for npmjs.com)
+2. Agent runs: `npm version patch && npm run build && npm publish --access public`
+3. Verify: `npx failprompt --version` works from any directory
 
-**Checklist:**
-- `package.json` version is `0.1.0` - bump to `1.0.0` before publish if desired
-- `README.md` has correct usage examples
-- `bin` field points to `dist/index.js`
-- `files` whitelist is set (`dist/`, `README.md`)
-- `prepublishOnly` runs build + tests automatically
+**Notes:**
+- `package.json` already has: `bin`, `files` whitelist, `prepublishOnly: "npm run build"`, `publishConfig: { access: "public" }`
+- No other prep needed - ship as is
 
 ---
 
-## 2. GitHub Actions CI Workflow (Optional, Low Priority)
+## 2. GitLab CI support (Phase 2, after npm publish)
 
-**Goal:** Auto-run tests on every push and PR.
+**Goal:** Support GitLab pipelines in addition to GitHub Actions.
 
-Create `.github/workflows/ci.yml`:
-```yaml
-name: CI
-on: [push, pull_request]
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: '22' }
-      - run: npm ci
-      - run: npm run build
-      - run: npm test
-```
+GitLab uses `CI_JOB_NAME`, `CI_PIPELINE_ID` env vars and the `gitlab-ci.yml` log format.
+The `log-fetcher.ts` would need a GitLab adapter alongside the existing `gh` shell-out.
 
 ---
 
-## 3. GitLab CI Support (Future Feature)
+## 3. ESLint setup (optional)
 
-**Goal:** Support fetching logs from GitLab CI pipelines.
-
-**Research needed:**
-- GitLab CI REST API for job logs
-- `glab` CLI equivalent of `gh run view --log-failed`
-- Log format differences (GitLab uses ANSI sections, different markers)
-
-**Implementation:**
-- Add `src/gitlab-fetcher.ts` with GitLab-specific log fetching
-- Auto-detect provider from git remote URL (github.com vs gitlab.com)
-- Add `--provider gitlab` flag as override
+Add `@typescript-eslint/eslint-plugin` with strict rules. Low priority - code is already
+clean and type-safe. Nice to have for contribution hygiene.
 
 ---
 
 ## Recently Completed
 
-| Item                      | Resolution                                        |
-| ------------------------- | ------------------------------------------------- |
-| Project setup             | Repo initialized, README + AAHP files             |
-| SONAR research            | gh CLI confirmed, commander confirmed, no existing competitors |
-| OPUS architecture         | 4-module split, gh shell-out, 3-tier error heuristics |
-| MVP implementation        | 4 modules + 25 tests on feat/mvp                  |
-| Review round (4 + ChatGPT)| allErrors rendered, extended heuristics, better gh errors |
-| Phase 5 FIX               | 29 tests passing, npm publish ready               |
-| AAHP re-run validation    | All phases verified, 29/29 tests pass, main branch |
+| Item | Resolution |
+| ---- | ---------- |
+| Project setup | Repo initialized, README, AAHP files |
+| Research | gh CLI approach confirmed, commander chosen, no competing OSS tools found |
+| Architecture | 4-module split (index/log-fetcher/error-extractor/prompt-builder), gh shell-out |
+| MVP implementation | 29/29 tests, build clean, npm-ready |
+| Review round | Opus: APPROVED, ChatGPT: APPROVED WITH CHANGES |
+| Post-review fixes | Env validation, PKCE bounds, redirect URI hardening (adapted from AEGIS pattern) |
+| gh log format bug | Parsing fixed: job/step/timestamp prefix now correctly stripped, step name extracted from metadata |
+| Integration tests | 3 scenarios: TypeScript error, npm ERR!, Jest failure - all passing |
+| GitHub Actions CI | `.github/workflows/ci.yml` live - runs on every push |
+| Real E2E test | Tested against own failing CI run (22257459273) - output validated |
