@@ -3,7 +3,7 @@
 > **Parse CI failure logs and generate ready-to-paste AI prompts, in one command.**
 
 ```bash
-npx failprompt
+npx @elvatis_com/failprompt
 # → prints a structured LLM-ready prompt to stdout, ready for Claude / ChatGPT / Copilot
 ```
 
@@ -48,10 +48,10 @@ glab auth login
 
 ```bash
 # Global install
-npm install -g failprompt
+npm install -g @elvatis_com/failprompt
 
 # Or run directly without installing
-npx failprompt
+npx @elvatis_com/failprompt
 ```
 
 ---
