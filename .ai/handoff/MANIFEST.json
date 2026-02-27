@@ -1,0 +1,43 @@
+{
+  "token_budget": {
+    "manifest_plus_core": 400,
+    "full_read": 1200,
+    "manifest_only": 100
+  },
+  "project": "failprompt",
+  "quick_context": "failprompt v0.1.0 published on npm. 29/29 tests passing. GitHub Actions CI live. 2 optional enhancement tasks.",
+  "last_session": {
+    "agent": "human",
+    "duration_minutes": 0,
+    "session_id": "npm-publish-done",
+    "phase": "maintenance",
+    "commit": "",
+    "timestamp": "2026-02-21T00:00:00Z"
+  },
+  "tasks": {
+    "T-002": {
+      "title": "ESLint setup with typescript-eslint strict rules",
+      "status": "ready",
+      "created": "2026-02-28T00:00:00Z",
+      "depends_on": [],
+      "priority": "low"
+    },
+    "T-001": {
+      "title": "Add GitLab CI support (CI_JOB_NAME, CI_PIPELINE_ID env vars, gitlab-ci.yml log format)",
+      "status": "ready",
+      "created": "2026-02-28T00:00:00Z",
+      "depends_on": [],
+      "priority": "low"
+    }
+  },
+  "next_task_id": 3,
+  "files": {
+    "NEXT_ACTIONS.md": {
+      "updated": "2026-02-28T00:00:00Z",
+      "checksum": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "lines": 40,
+      "summary": "2 optional tasks: GitLab CI adapter, ESLint. npm publish done, 29/29 tests passing."
+    }
+  },
+  "aahp_version": "3.0"
+}
