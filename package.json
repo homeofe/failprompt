@@ -28,6 +28,10 @@
   ],
   "author": "failprompt contributors",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elvatis/failprompt.git"
+  },
   "dependencies": {
     "commander": "^12.0.0"
   },
